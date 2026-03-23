@@ -31,5 +31,13 @@ public class RefreshTokenService {
                 .orElseThrow(() -> new RuntimeException("Refresh token não encontrado"));
         if (refreshToken.getExpiration().before(new Date())) {
             throw new RuntimeException("Refresh token expirado"); }
-        return refreshToken; } public void delete(String token) {
-        repository.findByToken(token) .ifPresent(repository::delete); } }
+        return refreshToken; }
+
+
+    public void delete(String token) {
+        repository.findByToken(token) .ifPresent(repository::delete);
+    }
+
+
+
+}

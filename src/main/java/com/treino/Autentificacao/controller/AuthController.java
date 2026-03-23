@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -25,6 +26,9 @@ public class AuthController {
 
     @Autowired
     private PasswordResetService passwordResetService;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
 
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping
@@ -81,5 +85,76 @@ public class AuthController {
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDTO dto) {
         passwordResetService.resetPassword(dto.getCode(), dto.getNewPassword());
         return ResponseEntity.ok("Senha alterada com sucesso");
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/verify-email")
+    public ResponseEntity<String> verifyEmail(@RequestParam String token) {
+
+        service.verifyEmail(token);
+
+        return ResponseEntity.ok("Email verificado com sucesso!");
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @PostMapping("/auth/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            refreshTokenService.delete(token);
+        }
+
+        return ResponseEntity.ok("logout com successo"); // 204
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> request) {
+        passwordResetService.changePassword(
+                request.get("currentPassword"),
+                request.get("newPassword")
+        );
+        return ResponseEntity.ok("Senha alterada com sucesso");
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @PutMapping("/me")
+    public ResponseEntity<User> updateMe(
+            HttpServletRequest request,
+            @RequestBody UpdateUserDTO dto) {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        String token = authHeader.substring(7);
+        String email = jwtService.extractEmail(token);
+
+        User updatedUser = service.updateUser(email, dto);
+
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @DeleteMapping("/me")
+    public ResponseEntity<String> deleteMe(HttpServletRequest request) {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Token inválido");
+        }
+
+        String token = authHeader.substring(7);
+        String email = jwtService.extractEmail(token);
+
+        service.deleteUser(email);
+
+        return ResponseEntity.ok("Usuario deletado com sucesso");
     }
 }

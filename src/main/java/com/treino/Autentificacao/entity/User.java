@@ -21,7 +21,18 @@ public class User {
 
     private String password;
 
+    private boolean enabled;
+
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    public void setEnabled(boolean b) {
+        this.enabled = enabled;
+
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
 }
 
